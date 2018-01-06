@@ -1,15 +1,19 @@
-var express = require('express');
-var passport = require('passport');
-var Strategy = require('passport-localapikey-update').Strategy;
-var bodyParser = require('body-parser');
-var morgan = require('morgan');
+const express = require('express');
+const passport = require('passport');
+const Strategy = require('passport-localapikey-update').Strategy;
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
+const spotify = require('spotify-node-applescript');
+const yamaha = require('./yamaha');
 
+// Setup user credentials
 const user = {
     username: 'admin',
     apikey: 'test'
 }
-const checkAuth = (apiKey) => (apiKey === user.apikey);
 
+// Authentication 
+const checkAuth = (apiKey) => (apiKey === user.apikey);
 passport.use(new Strategy(
     function (apiKey, done) {
         if (checkAuth(apiKey)) {
@@ -21,23 +25,45 @@ passport.use(new Strategy(
 ));
 
 // Create a new Express application.
-var app = express();
+const app = express();
 
-// Use application-level middleware for common functionality, including
-// logging, parsing
+// Use application-level middleware for common functionality, including logging, parsing
 app.use(morgan('combined'));
 app.use(bodyParser.json());
 
-// Initialize Passport and restore authentication state, if any, from the
-// session.
+// Initialize Passport
 app.use(passport.initialize());
 
 app.post('/test',
     passport.authenticate('localapikey', {
         session: false
     }),
-    function (req, res) {
-        res.json(req.body);
-    });
+    (req, res) => res.json(req.body)
+);
+
+//On trigger
+app.get('/spotify-on',
+    passport.authenticate('localapikey', {
+        session: false
+    }),
+    (req, res) => yamaha.powerOn()
+    .then(() => yamaha.setMainInputTo("HDMI4"))
+    .then(() => yamaha.setVolumeTo(-400))
+    .then(() => yamaha.set7chMode())
+    .then(() => spotify.play())
+    .then(() => res.json({status: 'Successfully turned on Yamaha and Spotify'}))
+    .catch((err) => (res.json(err)))
+);
+
+//Off trigger
+app.get('/spotify-off',
+    passport.authenticate('localapikey', {
+        session: false
+    }),
+    (req, res) => yamaha.powerOff()
+    .then(() => spotify.pause())
+    .then(() => res.json({status: 'Successfully turned off Yamaha and Spotify'}))
+    .catch((err) => (res.json(err)))
+);
 
 app.listen(3000);
