@@ -13,9 +13,6 @@
     "body-parser": "^1.18.2",
     "express": "^4.16.2",
     "morgan": "^1.9.0",
-    "passport": "^0.4.0",
-    "passport-local": "^1.0.0",
-    "passport-localapikey-update": "^0.6.0",
     "spotify-node-applescript": "^1.1.0",
     "yamaha-nodejs": "^0.7.8"
   }
